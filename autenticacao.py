@@ -29,6 +29,16 @@ def agora():
     return datetime.datetime.now(datetime.timezone.utc)
 
 
+def key_usage(**ativos):
+    campos = dict(
+        digital_signature=False, content_commitment=False, key_encipherment=False,
+        data_encipherment=False, key_agreement=False, key_cert_sign=False,
+        crl_sign=False, encipher_only=False, decipher_only=False,
+    )
+    campos.update(ativos)
+    return x509.KeyUsage(**campos)
+
+
 def gerar_certificado_raiz():
     chave = gerar_chave()
     cert = (
@@ -40,6 +50,7 @@ def gerar_certificado_raiz():
         .not_valid_before(agora() - datetime.timedelta(minutes=1))
         .not_valid_after(agora() + datetime.timedelta(days=3650))
         .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
+        .add_extension(key_usage(key_cert_sign=True, crl_sign=True), critical=True)
         .sign(chave, hashes.SHA256())
     )
     return chave, cert
@@ -56,6 +67,9 @@ def gerar_certificado_servidor(ca_chave, ca_cert, cn, dias=365):
         .not_valid_before(agora() - datetime.timedelta(minutes=1))
         .not_valid_after(agora() + datetime.timedelta(days=dias))
         .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+        .add_extension(
+            key_usage(digital_signature=True, key_encipherment=True), critical=True
+        )
         .sign(ca_chave, hashes.SHA256())
     )
     return chave, cert
@@ -98,6 +112,14 @@ class Cliente:
         t = agora()
         if not (cert.not_valid_before_utc <= t <= cert.not_valid_after_utc):
             raise ValueError("Certificado fora do prazo de validade")
+
+        # Uso da chave: precisa permitir cifrar (o nonce é cifrado com PubSVR)
+        try:
+            ku = cert.extensions.get_extension_for_class(x509.KeyUsage).value
+        except x509.ExtensionNotFound:
+            raise ValueError("Certificado sem KeyUsage")
+        if not ku.key_encipherment:
+            raise ValueError("Certificado não permite key_encipherment")
 
         # 3. Identidade (CN)
         cns = cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
