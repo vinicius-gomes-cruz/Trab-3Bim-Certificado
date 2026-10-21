@@ -16,11 +16,6 @@ OAEP = padding.OAEP(
     label=None,
 )
 
-
-def gerar_chave():
-    return rsa.generate_private_key(public_exponent=65537, key_size=2048)
-
-
 def nome(cn):
     return x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])
 
@@ -40,7 +35,7 @@ def key_usage(**ativos):
 
 
 def gerar_certificado_raiz():
-    chave = gerar_chave()
+    chave = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     cert = (
         x509.CertificateBuilder()
         .subject_name(nome("AC Raiz"))
@@ -57,7 +52,7 @@ def gerar_certificado_raiz():
 
 
 def gerar_certificado_servidor(ca_chave, ca_cert, cn, dias=365):
-    chave = gerar_chave()
+    chave = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     cert = (
         x509.CertificateBuilder()
         .subject_name(nome(cn))
