@@ -133,7 +133,7 @@ class Cliente:
         return resposta == nonce
 
 
-def main():
+def AutenticacaoServidor():
     host = "servidor.exemplo.com"
     ca_chave, ca_cert = gerar_certificado_raiz()
     sv_chave, sv_cert = gerar_certificado_servidor(ca_chave, ca_cert, host)
@@ -149,5 +149,4 @@ def main():
     print("=== Cenário 1: servidor legítimo ===")
     resultado(Cliente(ca_cert, host).autenticar(Servidor(sv_cert, sv_chave)))
 
-if __name__ == "__main__":
-    main()
+AutenticacaoServidor()
