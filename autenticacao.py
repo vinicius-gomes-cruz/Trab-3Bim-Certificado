@@ -149,8 +149,16 @@ def main():
     ca_chave, ca_cert = gerar_certificado_raiz()
     sv_chave, sv_cert = gerar_certificado_servidor(ca_chave, ca_cert, host)
 
+    # Certificado falso
+    fk, fc = gerar_certificado_raiz()
+    fsk, fsc = gerar_certificado_servidor(fk, fc, host)
+
     print("=== Cenário 1: servidor legítimo ===")
-    print('Autenticado:', Cliente(ca_cert, "servidor.exemplo.com").autenticar(Servidor(sv_cert, sv_chave)))
+    def resultado(ok):
+        print("Autenticação:", "SUCESSO" if ok else "FALHA")
+
+    print("=== Cenário 1: servidor legítimo ===")
+    resultado(Cliente(ca_cert, host).autenticar(Servidor(sv_cert, sv_chave)))
 
 if __name__ == "__main__":
     main()
