@@ -10,12 +10,6 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 from cryptography.x509.oid import NameOID
 
-OAEP = padding.OAEP(
-    mgf=padding.MGF1(algorithm=hashes.SHA256()),
-    algorithm=hashes.SHA256(),
-    label=None,
-)
-
 def nome(cn):
     return x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])
 
@@ -79,7 +73,7 @@ class Servidor:
         return self.cert.public_bytes(serialization.Encoding.PEM)
 
     def responder_desafio(self, cifrado):
-        return self._chave.decrypt(cifrado, OAEP)
+        return self._chave.decrypt(cifrado, padding.PKCS1v15())
 
 
 class Cliente:
@@ -134,7 +128,7 @@ class Cliente:
 
         nonce = os.urandom(32)
         print(f"Cliente: Nonce gerado = {nonce.hex()}")
-        resposta = servidor.responder_desafio(pub.encrypt(nonce, OAEP))
+        resposta = servidor.responder_desafio(pub.encrypt(nonce, padding.PKCS1v15()))
         print(f"Servidor -> Cliente: Nonce = {resposta.hex()}")
         return resposta == nonce
 
