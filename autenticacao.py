@@ -130,15 +130,15 @@ class Cliente:
         return cert.public_key()
 
     def autenticar(self, servidor):
-        print("Cliente -> Servidor: Hello!")
         pem = servidor.hello()
-        print("Servidor -> Cliente: Cert_SVR")
-        pub = self.validar_certificado(pem)
-        print("Cliente: certificado válido (assinatura, prazo, CN). PubSVR extraída.")
+        try:
+            pub = self.validar_certificado(pem)
+        except ValueError as e:
+            print(f"Cliente: certificado rejeitado ({e})")
+            return False
 
         nonce = os.urandom(32)
         print(f"Cliente: Nonce gerado = {nonce.hex()}")
-        print("Cliente -> Servidor: Enc(PubSVR, Nonce)")
         resposta = servidor.responder_desafio(pub.encrypt(nonce, OAEP))
         print(f"Servidor -> Cliente: Nonce = {resposta.hex()}")
         return resposta == nonce
@@ -150,31 +150,7 @@ def main():
     sv_chave, sv_cert = gerar_certificado_servidor(ca_chave, ca_cert, host)
 
     print("=== Cenário 1: servidor legítimo ===")
-    ok = Cliente(ca_cert, host).autenticar(Servidor(sv_cert, sv_chave))
-    print("Autenticação:", "SUCESSO" if ok else "FALHA")
-
-    print("\n=== Cenário 2: CN diferente do esperado ===")
-    try:
-        Cliente(ca_cert, "outro.com").autenticar(Servidor(sv_cert, sv_chave))
-    except ValueError as e:
-        print("Rejeitado:", e)
-
-    print("\n=== Cenário 3: certificado de CA falsa ===")
-    fk, fc = gerar_certificado_raiz()
-    fsk, fsc = gerar_certificado_servidor(fk, fc, host)
-    try:
-        Cliente(ca_cert, host).autenticar(Servidor(fsc, fsk))
-    except ValueError as e:
-        print("Rejeitado:", e)
-
-    print("\n=== Cenário 4: impostor com cert válido mas sem a chave privada ===")
-    ok = False
-    try:
-        ok = Cliente(ca_cert, host).autenticar(Servidor(sv_cert, gerar_chave()))
-    except ValueError as e:
-        print("Rejeitado: falha na descriptografia do desafio:", e)
-    print("Autenticação:", "SUCESSO" if ok else "FALHA")
-
+    print('Autenticado:', Cliente(ca_cert, "servidor.exemplo.com").autenticar(Servidor(sv_cert, sv_chave)))
 
 if __name__ == "__main__":
     main()
