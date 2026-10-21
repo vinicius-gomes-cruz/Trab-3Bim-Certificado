@@ -142,11 +142,7 @@ def AutenticacaoServidor():
     fk, fc = gerar_certificado_raiz()
     fsk, fsc = gerar_certificado_servidor(fk, fc, host)
 
-    print("=== Cenário 1: servidor legítimo ===")
-    def resultado(ok):
-        print("Autenticação:", "SUCESSO" if ok else "FALHA")
 
-    print("=== Cenário 1: servidor legítimo ===")
-    resultado(Cliente(ca_cert, host).autenticar(Servidor(sv_cert, sv_chave)))
+    print('Autenticado:', Cliente(ca_cert, host).autenticar(Servidor(sv_cert, sv_chave)))
 
 AutenticacaoServidor()
